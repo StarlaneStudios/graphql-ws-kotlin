@@ -13,7 +13,7 @@ sealed class ConnectResult {
 	 */
 	class Success(
 		val schema: GraphQLSchema,
-		val response: GraphQLContext? = null
+		val payload: Map<String, Any>? = null
 	) : ConnectResult()
 
 	/**

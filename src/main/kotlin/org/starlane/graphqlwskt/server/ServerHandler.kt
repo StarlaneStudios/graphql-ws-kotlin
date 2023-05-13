@@ -20,26 +20,35 @@ import kotlin.coroutines.CoroutineContext
  * The main server-side WebSocket implementation
  */
 internal class ServerHandler(
+	address: InetSocketAddress,
 	val adapter: GraphQLServerAdapter,
-	val address: InetSocketAddress,
 	val path: String,
 	val initTimeout: Long,
 	val context: CoroutineContext
 ) : WebSocketServer(address) {
 
+	internal val startupTask = CompletableDeferred<Unit>()
 	internal val sockets = HashMap<WebSocket, SocketState>()
 
 	override fun onOpen(conn: WebSocket, handshake: ClientHandshake) = runBlocking(context) r@ {
+		val path = handshake.resourceDescriptor
+
+		println("path = $path")
+
 		if (!conn.protocol.acceptProvidedProtocol(PROTOCOL)) {
 			conn.close(CloseCode.SubprotocolNotAcceptable)
 			return@r
 		}
 
+		val context = GraphQLContext.newContext()
+			.put("__socket", conn)
+			.build()
+
 		val state = SocketState(
 			socket = conn,
 			initialized = false,
 			acknowledged = false,
-			context = GraphQLContext.getDefault(),
+			context = context,
 			subscriptions = HashMap(),
 			graphql = null,
 		)
@@ -47,26 +56,12 @@ internal class ServerHandler(
 		launch {
 			delay(initTimeout)
 
-			if (!state.initialized) {
+			if (!state.initialized && conn.isOpen) {
 				conn.close(CloseCode.ConnectionInitialisationTimeout)
 			}
 		}
 
 		sockets[conn] = state
-	}
-
-	override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) = runBlocking(context) r@ {
-		val state = sockets.remove(conn)
-
-		if (state != null) {
-			for (sub in state.subscriptions.values) {
-				sub.cancel()
-			}
-
-			if (state.acknowledged) {
-				adapter.onDisconnect(state.context, code, reason)
-			}
-		}
 	}
 
 	override fun onMessage(conn: WebSocket, message: String) = runBlocking(context) r@ {
@@ -99,7 +94,7 @@ internal class ServerHandler(
 						conn.close(CloseCode.Forbidden)
 					}
 					is ConnectResult.Success -> {
-						val response = result.response ?: GraphQLContext.getDefault()
+						val response = result.payload ?: emptyMap()
 
 						conn.send(ConnectionAck(response))
 
@@ -181,21 +176,48 @@ internal class ServerHandler(
 		}
 	}
 
+	override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) = runBlocking(context) r@ {
+		val state = sockets.remove(conn)
+
+		if (state != null) {
+			for (sub in state.subscriptions.values) {
+				sub.cancel()
+			}
+
+			if (state.acknowledged) {
+				adapter.onDisconnect(state.context, code, reason)
+			}
+		}
+	}
+
 	override fun onError(conn: WebSocket?, err: Exception) = runBlocking(context) r@ {
 		if (conn == null) {
+			startupTask.completeExceptionally(err)
 			return@r
 		}
 
-		return@r
+		val state = sockets.remove(conn)
+
+		if (state != null) {
+			for (sub in state.subscriptions.values) {
+				sub.cancel()
+			}
+
+			if (state.acknowledged) {
+				adapter.onError(state.context, err)
+				adapter.onDisconnect(state.context, -1, err.message ?: "Unknown WebSocket error")
+			}
+		}
 	}
 
 	override fun onStart() {
+		startupTask.complete(Unit)
 	}
 
 	companion object {
 		const val PROTOCOL = "graphql-transport-ws"
 		const val DEFAULT_HOST = "127.0.0.1"
-		const val DEFAULT_PORT = 80
+		const val DEFAULT_PORT = 4000
 	}
 
 }

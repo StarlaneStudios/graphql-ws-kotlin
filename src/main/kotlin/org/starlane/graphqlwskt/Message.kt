@@ -15,14 +15,14 @@ sealed class Message(
 	 * Client -> Server: Indicate a request to initialize a connection
 	 */
 	class ConnectionInit(
-		val payload: GraphQLContext = GraphQLContext.getDefault()
+		val payload: Map<String, Any?> = emptyMap()
 	) : Message("connection_init")
 
 	/**
 	 * Server -> Client: Respond to a connection_init request
 	 */
 	class ConnectionAck(
-		val payload: GraphQLContext = GraphQLContext.getDefault()
+		val payload: Map<String, Any?> = emptyMap()
 	) : Message("connection_ack")
 
 	/**

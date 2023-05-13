@@ -16,7 +16,7 @@ class GraphQLServer(
 	val context: CoroutineContext = EmptyCoroutineContext
 ) {
 
-	private val handler = ServerHandler(adapter, address, path, initTimeout, context)
+	private val handler = ServerHandler(address, adapter, path, initTimeout, context)
 
 	/**
 	 * Returns a list of all active connections
@@ -30,8 +30,15 @@ class GraphQLServer(
 	 * Start the GraphQL Web Socket server in
 	 * a dedicated thread and listen for incoming
 	 * connections.
+	 *
+	 * Suspends until the server is bound to the port,
+	 * throwing an exception if the server could not
+	 * be started.
 	 */
-	fun start() = handler.start()
+	suspend fun start() {
+		handler.start()
+		handler.startupTask.await()
+	}
 
 	/**
 	 * Stop the GraphQL Web Socket server

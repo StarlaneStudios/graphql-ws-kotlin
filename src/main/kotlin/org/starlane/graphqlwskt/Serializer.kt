@@ -1,13 +1,13 @@
 package org.starlane.graphqlwskt
 
-import com.google.gson.*
-import com.google.gson.reflect.TypeToken
-import graphql.GraphQLContext
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
 import java.lang.reflect.Type
 
-internal val GraphqlGson = GsonBuilder()
+internal val MessageParser = GsonBuilder()
 	.registerTypeAdapter(Message::class.java, MessageAdapter())
-	.registerTypeAdapter(GraphQLContext::class.java, ContextAdapter())
 	.create()
 
 class MessageAdapter : JsonDeserializer<Message> {
@@ -29,27 +29,6 @@ class MessageAdapter : JsonDeserializer<Message> {
 		}
 
 		return context.deserialize(json, target)
-	}
-
-}
-
-class ContextAdapter : JsonDeserializer<GraphQLContext>, JsonSerializer<GraphQLContext> {
-
-	override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): GraphQLContext {
-		val token = object: TypeToken<HashMap<String, Any>>() {}.type
-		val content = context.deserialize<Map<String, Any>>(json, token)
-
-		return GraphQLContext.of(content)
-	}
-
-	override fun serialize(src: GraphQLContext, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
-		val result = JsonObject()
-
-		src.stream().forEach { (key, value) ->
-			result.add(key as String, context.serialize(value))
-		}
-
-		return result
 	}
 
 }

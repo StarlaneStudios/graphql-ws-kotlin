@@ -63,7 +63,6 @@ fun compileSchema(
 	return compileSchemas(listOf(schema))
 }
 
-
 /**
  * Combine the given schema definitions into a single schema
  *

@@ -10,7 +10,7 @@ import java.util.concurrent.Future
  * An implementation of a data fetcher which provides
  * suspendable resolution of the data
  */
-interface DataResolver<T> : DataFetcher<Future<T>> {
+interface AsyncDataFetcher<T> : DataFetcher<Future<T>> {
 
 	suspend fun resolve(environment: DataFetchingEnvironment): T
 

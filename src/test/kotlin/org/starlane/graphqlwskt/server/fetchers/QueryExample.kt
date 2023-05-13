@@ -1,9 +1,10 @@
-package org.starlane.graphqlwskt.server
+package org.starlane.graphqlwskt.server.fetchers
 
 import graphql.schema.DataFetchingEnvironment
-import org.starlane.graphqlwskt.util.DataResolver
+import kotlinx.coroutines.delay
+import org.starlane.graphqlwskt.util.AsyncDataFetcher
 
-class ExampleFetcher : DataResolver<String> {
+class QueryExample : AsyncDataFetcher<String> {
 
 	val responses = listOf(
 		"Hello World",
@@ -12,6 +13,8 @@ class ExampleFetcher : DataResolver<String> {
 	)
 
 	override suspend fun resolve(environment: DataFetchingEnvironment): String {
+		delay(500)
+
 		return responses.random()
 	}
 

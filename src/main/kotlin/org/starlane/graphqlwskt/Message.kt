@@ -1,7 +1,5 @@
 package org.starlane.graphqlwskt
 
-import graphql.GraphQLContext
-
 /**
  * Represents a message sent over a GraphQL connection
  *
@@ -38,7 +36,7 @@ sealed class Message(
 	 */
 	class Next(
 		val id: String,
-		val payload: Any
+		val payload: Any?
 	) : Message("next")
 
 	/**
@@ -46,7 +44,7 @@ sealed class Message(
 	 */
 	class Error(
 		val id: String,
-		val payload: Array<Any>
+		val payload: Array<Map<String, Any>>
 	) : Message("error")
 
 	/**

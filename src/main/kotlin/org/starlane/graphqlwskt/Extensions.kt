@@ -15,7 +15,7 @@ internal fun WebSocket.close(code: CloseCode) {
 }
 
 internal fun WebSocket.send(msg: Message) {
-	this.send(GraphqlGson.toJson(msg))
+	this.send(MessageParser.toJson(msg))
 }
 
 internal inline fun <reified T> Gson.fromJson(json: String): T {

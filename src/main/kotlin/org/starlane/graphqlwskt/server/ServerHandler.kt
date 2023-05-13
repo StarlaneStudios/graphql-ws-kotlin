@@ -1,12 +1,16 @@
 package org.starlane.graphqlwskt.server
 
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.execution.SubscriptionExecutionStrategy
 import kotlinx.coroutines.*
 import org.java_websocket.WebSocket
+import org.java_websocket.drafts.Draft
+import org.java_websocket.drafts.Draft_6455
 import org.java_websocket.handshake.ClientHandshake
+import org.java_websocket.protocols.Protocol
 import org.java_websocket.server.WebSocketServer
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -25,22 +29,19 @@ internal class ServerHandler(
 	val path: String,
 	val initTimeout: Long,
 	val context: CoroutineContext
-) : WebSocketServer(address) {
+) : WebSocketServer(address, buildDraft()) {
 
 	internal val startupTask = CompletableDeferred<Unit>()
 	internal val sockets = HashMap<WebSocket, SocketState>()
+	internal val scope = CoroutineScope(context)
 
-	override fun onOpen(conn: WebSocket, handshake: ClientHandshake) = runBlocking(context) r@ {
-		val path = handshake.resourceDescriptor
-
-		println("path = $path")
-
-		if (!conn.protocol.acceptProvidedProtocol(PROTOCOL)) {
-			conn.close(CloseCode.SubprotocolNotAcceptable)
-			return@r
+	override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
+		if (handshake.resourceDescriptor != path) {
+			conn.close(CloseCode.BadRequest)
+			return
 		}
 
-		val context = GraphQLContext.newContext()
+		val ctx = GraphQLContext.newContext()
 			.put("__socket", conn)
 			.build()
 
@@ -48,12 +49,12 @@ internal class ServerHandler(
 			socket = conn,
 			initialized = false,
 			acknowledged = false,
-			context = context,
+			context = ctx,
 			subscriptions = HashMap(),
 			graphql = null,
 		)
 
-		launch {
+		scope.launch {
 			delay(initTimeout)
 
 			if (!state.initialized && conn.isOpen) {
@@ -64,30 +65,32 @@ internal class ServerHandler(
 		sockets[conn] = state
 	}
 
-	override fun onMessage(conn: WebSocket, message: String) = runBlocking(context) r@ {
+	override fun onMessage(conn: WebSocket, message: String) {
 		val state = sockets[conn] ?: run {
 			conn.close(CloseCode.InternalServerError)
-			return@r
+			return
 		}
 
 		val msg = try {
-			GraphqlGson.fromJson<Message>(message)
+			MessageParser.fromJson<Message>(message)
 		} catch(e: Exception) {
 			conn.close(CloseCode.BadRequest)
-			return@r
+			return
 		}
 
 		when(msg) {
 			is ConnectionInit -> {
 				if (state.initialized) {
 					conn.close(CloseCode.TooManyInitialisationRequests)
-					return@r
+					return
 				}
 
 				state.initialized = true
 				state.context.putAll(msg.payload)
 
-				val result = adapter.onConnect(state.context)
+				val result = runBlocking {
+					adapter.onConnect(state.context)
+				}
 
 				when(result) {
 					is ConnectResult.Failure -> {
@@ -110,53 +113,75 @@ internal class ServerHandler(
 			is Subscribe -> {
 				if (!state.acknowledged) {
 					conn.close(CloseCode.Unauthorized)
-					return@r
+					return
 				}
 
 				if (msg.id in state.subscriptions) {
 					conn.close(CloseCode.SubscriberAlreadyExists)
-					return@r
+					return
 				}
 
 				val mid = msg.id
+				val (operationName, query, variables, extensions) = msg.payload
+
 				val input = ExecutionInput.newExecutionInput()
-					.query(msg.payload.query)
-					.operationName(msg.payload.operationName)
-					.variables(msg.payload.variables)
-					.extensions(msg.payload.extensions)
+					.query(query)
+					.operationName(operationName)
 
-				val result = withContext(Dispatchers.IO) {
-					state.graphql!!.execute(input)
+				if (variables != null) {
+					input.variables(variables)
 				}
 
-				if (result.errors.isNotEmpty()) {
-					conn.send(Error(mid, result.errors.toTypedArray()))
+				if (extensions != null) {
+					input.extensions(extensions)
+				}
+
+				val result = state.graphql!!.execute(input)
+				val data = result.getData<Any?>()
+
+				if (!result.isDataPresent) {
+					val errors = result.errors.map {
+						it.toSpecification()
+					}
+
+					conn.send(Error(mid, errors.toTypedArray()))
 					conn.send(Complete(mid))
-					return@r
+					return
 				}
-
-				val data = result.getData<Any>()
 
 				if (data !is Publisher<*>) {
-					conn.send(Next(mid, data))
+					conn.send(Next(mid, result.toSpecification()))
 					conn.send(Complete(mid))
-					return@r
+					return
 				}
 
 				data.subscribe(object : Subscriber<Any> {
 
+					private lateinit var stream: Subscription
+
 					override fun onSubscribe(sub: Subscription) {
 						state.subscriptions[mid] = sub
-						sub.request(Long.MAX_VALUE)
+
+						stream = sub
+						stream.request(1)
 					}
 
 					override fun onNext(value: Any) {
-						conn.send(Next(mid, value))
+						if (value !is ExecutionResult) {
+							throw IllegalStateException("Expected ExecutionResult, got ${value::class.simpleName}")
+						}
+
+						conn.send(Next(mid, value.toSpecification()))
+						stream.request(1)
 					}
 
 					override fun onError(error: Throwable) {
-						conn.send(Error(mid, arrayOf(error)))
+						runBlocking {
+							adapter.onError(state.context, error)
+						}
+
 						conn.send(Complete(mid))
+						state.subscriptions.remove(mid)
 					}
 
 					override fun onComplete() {
@@ -176,7 +201,7 @@ internal class ServerHandler(
 		}
 	}
 
-	override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) = runBlocking(context) r@ {
+	override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) {
 		val state = sockets.remove(conn)
 
 		if (state != null) {
@@ -185,15 +210,17 @@ internal class ServerHandler(
 			}
 
 			if (state.acknowledged) {
-				adapter.onDisconnect(state.context, code, reason)
+				runBlocking {
+					adapter.onDisconnect(state.context, code, reason)
+				}
 			}
 		}
 	}
 
-	override fun onError(conn: WebSocket?, err: Exception) = runBlocking(context) r@ {
+	override fun onError(conn: WebSocket?, err: Exception) {
 		if (conn == null) {
 			startupTask.completeExceptionally(err)
-			return@r
+			return
 		}
 
 		val state = sockets.remove(conn)
@@ -204,8 +231,10 @@ internal class ServerHandler(
 			}
 
 			if (state.acknowledged) {
-				adapter.onError(state.context, err)
-				adapter.onDisconnect(state.context, -1, err.message ?: "Unknown WebSocket error")
+				runBlocking {
+					adapter.onError(state.context, err)
+					adapter.onDisconnect(state.context, -1, err.message ?: "Unknown WebSocket error")
+				}
 			}
 		}
 	}
@@ -218,6 +247,13 @@ internal class ServerHandler(
 		const val PROTOCOL = "graphql-transport-ws"
 		const val DEFAULT_HOST = "127.0.0.1"
 		const val DEFAULT_PORT = 4000
+
+		private fun buildDraft(): List<Draft> {
+			return listOf(Draft_6455(
+				listOf(),
+				listOf(Protocol(PROTOCOL))
+			))
+		}
 	}
 
 }

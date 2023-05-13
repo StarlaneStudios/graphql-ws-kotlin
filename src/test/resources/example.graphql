@@ -1,3 +1,7 @@
 type Query {
-    example: String
+    example: String!
+}
+
+type Subscription {
+    examples: String!
 }

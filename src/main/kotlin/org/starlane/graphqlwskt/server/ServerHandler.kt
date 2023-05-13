@@ -15,20 +15,19 @@ import org.starlane.graphqlwskt.*
 import org.starlane.graphqlwskt.Message.*
 import java.net.InetSocketAddress
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * A WebSocket-based GraphQL Server
+ * The main server-side WebSocket implementation
  */
-class GraphqlServer(
-	val adapter: GraphqlServerAdapter,
-	val address: InetSocketAddress = InetSocketAddress("127.0.0.1", 8000),
-	val path: String = "/subscriptions",
-	val initTimeout: Long = 5000,
-	val context: CoroutineContext = EmptyCoroutineContext
+internal class ServerHandler(
+	val adapter: GraphQLServerAdapter,
+	val address: InetSocketAddress,
+	val path: String,
+	val initTimeout: Long,
+	val context: CoroutineContext
 ) : WebSocketServer(address) {
 
-	private val sockets = HashMap<WebSocket, SocketState>()
+	internal val sockets = HashMap<WebSocket, SocketState>()
 
 	override fun onOpen(conn: WebSocket, handshake: ClientHandshake) = runBlocking(context) r@ {
 		if (!conn.protocol.acceptProvidedProtocol(PROTOCOL)) {
@@ -195,6 +194,8 @@ class GraphqlServer(
 
 	companion object {
 		const val PROTOCOL = "graphql-transport-ws"
+		const val DEFAULT_HOST = "127.0.0.1"
+		const val DEFAULT_PORT = 80
 	}
 
 }

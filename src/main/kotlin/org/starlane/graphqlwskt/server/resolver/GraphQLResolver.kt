@@ -1,11 +1,11 @@
-package org.starlane.graphqlwskt
+package org.starlane.graphqlwskt.server.resolver
 
 import graphql.GraphQLContext
 
 /**
  * The implementation of a single GraphQL resolver
  */
-interface GraphqlResolver<P, A> {
+interface GraphQLResolver<P, A> {
 
 	/**
 	 * Execute the resolver based on an incoming request

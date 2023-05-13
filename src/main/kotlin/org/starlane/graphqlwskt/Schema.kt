@@ -7,6 +7,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.starlane.graphqlwskt.server.resolver.GraphQLResolver
 import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -119,7 +120,7 @@ class TypeBuilder internal constructor(
 	 * @param name The name of the resolver
 	 * @param resolver The resolver
 	 */
-	fun <P, A> resolve(name: String, resolver: GraphqlResolver<P, A>) {
+	fun <P, A> resolve(name: String, resolver: GraphQLResolver<P, A>) {
 		val argsType = resolver::class.nestedClasses.firstOrNull {
 			it.simpleName == "Args"
 		} ?: throw IllegalArgumentException("Resolver ${resolver::class.simpleName} does not have an Args class")

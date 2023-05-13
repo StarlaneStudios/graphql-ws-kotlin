@@ -5,7 +5,7 @@ import graphql.GraphQLContext
 /**
  *
  */
-interface  GraphqlServerAdapter {
+interface GraphQLServerAdapter {
 
 	/**
 	 * Called when the client requests initialization

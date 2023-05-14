@@ -17,6 +17,7 @@ class GraphQLServer(
 ) {
 
 	private val handler = ServerHandler(address, adapter, path, initTimeout, context)
+	private var initialized = false
 
 	/**
 	 * Returns a list of all active connections
@@ -36,12 +37,18 @@ class GraphQLServer(
 	 * be started.
 	 */
 	suspend fun start() {
+		if (initialized) {
+			throw IllegalStateException("Server can only be started once")
+		}
+
 		handler.start()
 		handler.startupTask.await()
+		initialized = true
 	}
 
 	/**
-	 * Stop the GraphQL Web Socket server
+	 * Stop the GraphQL Web Socket server and
+	 * disconnects any connected clients
 	 */
 	fun stop() = handler.stop()
 

@@ -1,7 +1,7 @@
 package org.starlane.graphqlwskt.server
 
-import graphql.GraphQLContext
 import graphql.schema.GraphQLSchema
+import org.starlane.graphqlwskt.Payload
 
 /**
  * Represents the result of a GraphQL connection
@@ -13,7 +13,7 @@ sealed class ConnectResult {
 	 */
 	class Success(
 		val schema: GraphQLSchema,
-		val payload: Map<String, Any>? = null
+		val payload: Payload? = null
 	) : ConnectResult()
 
 	/**

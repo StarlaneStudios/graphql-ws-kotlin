@@ -1,8 +1,10 @@
 package org.starlane.graphqlwskt.server.fetchers
 
 import graphql.schema.DataFetchingEnvironment
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
 import org.starlane.graphqlwskt.util.FlowDataFetcher
 
 class SubscriptionExample : FlowDataFetcher<String> {
@@ -14,8 +16,9 @@ class SubscriptionExample : FlowDataFetcher<String> {
 	)
 
 	override fun resolve(environment: DataFetchingEnvironment): Flow<String> {
-		return flow {
-			throw Error("pepega moment")
+		return responses.asFlow().map {
+			delay(1000)
+			it
 		}
 	}
 

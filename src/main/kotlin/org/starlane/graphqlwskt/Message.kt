@@ -1,5 +1,7 @@
 package org.starlane.graphqlwskt
 
+import com.google.gson.JsonObject
+
 /**
  * Represents a message sent over a GraphQL connection
  *
@@ -13,14 +15,14 @@ sealed class Message(
 	 * Client -> Server: Indicate a request to initialize a connection
 	 */
 	class ConnectionInit(
-		val payload: Map<String, Any?> = emptyMap()
+		val payload: Payload = emptyMap()
 	) : Message("connection_init")
 
 	/**
 	 * Server -> Client: Respond to a connection_init request
 	 */
 	class ConnectionAck(
-		val payload: Map<String, Any?> = emptyMap()
+		val payload: Payload = emptyMap()
 	) : Message("connection_ack")
 
 	/**
@@ -36,7 +38,7 @@ sealed class Message(
 	 */
 	class Next(
 		val id: String,
-		val payload: Any?
+		val payload: JsonObject? // Parsed later
 	) : Message("next")
 
 	/**

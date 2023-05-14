@@ -6,8 +6,8 @@ import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 
-internal typealias FieldMap = MutableMap<String, DataFetcher<*>>
-internal typealias TypeMap = MutableMap<String, FieldMap>
+typealias FieldMap = MutableMap<String, DataFetcher<*>>
+typealias TypeMap = MutableMap<String, FieldMap>
 
 /**
  * A schema definition encapsulates a GraphQL schema and its resolvers

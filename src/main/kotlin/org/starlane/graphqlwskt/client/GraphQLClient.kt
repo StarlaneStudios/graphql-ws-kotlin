@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.withContext
 import org.starlane.graphqlwskt.OperationRequest
 import org.starlane.graphqlwskt.Payload
+import java.lang.Exception
 import java.net.URI
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -71,7 +72,11 @@ class GraphQLClient(
 		}
 
 		withContext(Dispatchers.IO) {
-			client.connectBlocking()
+			val success = client.connectBlocking()
+
+			if(!success) {
+				throw GraphQLNetworkException()
+			}
 		}
 	}
 

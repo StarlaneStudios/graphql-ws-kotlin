@@ -1,5 +1,7 @@
 package org.starlane.graphqlwskt.server
 
+import org.starlane.graphqlwskt.DEFAULT_HOST
+import org.starlane.graphqlwskt.DEFAULT_PORT
 import java.net.InetSocketAddress
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -10,7 +12,7 @@ import kotlin.coroutines.EmptyCoroutineContext
  */
 class GraphQLServer(
 	val adapter: GraphQLServerAdapter,
-	val address: InetSocketAddress = InetSocketAddress(ServerHandler.DEFAULT_HOST, ServerHandler.DEFAULT_PORT),
+	val address: InetSocketAddress = InetSocketAddress(DEFAULT_HOST, DEFAULT_PORT),
 	val path: String = "/subscriptions",
 	val initTimeout: Long = 5000,
 	val context: CoroutineContext = EmptyCoroutineContext

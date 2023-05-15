@@ -8,10 +8,7 @@ import graphql.GraphQLContext
 import graphql.execution.SubscriptionExecutionStrategy
 import kotlinx.coroutines.*
 import org.java_websocket.WebSocket
-import org.java_websocket.drafts.Draft
-import org.java_websocket.drafts.Draft_6455
 import org.java_websocket.handshake.ClientHandshake
-import org.java_websocket.protocols.Protocol
 import org.java_websocket.server.WebSocketServer
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -30,7 +27,7 @@ internal class ServerHandler(
 	val path: String,
 	val initTimeout: Long,
 	val context: CoroutineContext
-) : WebSocketServer(address, buildDraft()) {
+) : WebSocketServer(address, buildDraftList()) {
 
 	internal val startupTask = CompletableDeferred<Unit>()
 	internal val sockets = HashMap<WebSocket, SocketState>()
@@ -246,19 +243,6 @@ internal class ServerHandler(
 
 	override fun onStart() {
 		startupTask.complete(Unit)
-	}
-
-	companion object {
-		const val PROTOCOL = "graphql-transport-ws"
-		const val DEFAULT_HOST = "127.0.0.1"
-		const val DEFAULT_PORT = 4000
-
-		private fun buildDraft(): List<Draft> {
-			return listOf(Draft_6455(
-				listOf(),
-				listOf(Protocol(PROTOCOL))
-			))
-		}
 	}
 
 }

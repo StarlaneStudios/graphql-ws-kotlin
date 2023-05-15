@@ -28,7 +28,7 @@ internal class ClientHandler(
 	val context: CoroutineContext,
 	val initTimeout: Long = 5000,
 	val params: (() -> Payload)? = null,
-) : WebSocketClient(endpoint) {
+) : WebSocketClient(endpoint, buildDraft()) {
 
 	internal var initPayload: Payload? = null
 	internal var acknowledged = false

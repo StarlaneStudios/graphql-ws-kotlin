@@ -1,5 +1,6 @@
 package org.starlane.graphqlwskt.server
 
+import com.google.gson.JsonObject
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
@@ -150,7 +151,9 @@ internal class ServerHandler(
 				}
 
 				if (data !is Publisher<*>) {
-					conn.send(Next(mid, result.toSpecification()))
+					val payload = MessageParser.toJsonTree(result.toSpecification()) as JsonObject
+
+					conn.send(Next(mid, payload))
 					conn.send(Complete(mid))
 					return
 				}
@@ -171,7 +174,9 @@ internal class ServerHandler(
 							throw IllegalStateException("Expected ExecutionResult, got ${value::class.simpleName}")
 						}
 
-						conn.send(Next(mid, value.toSpecification()))
+						val payload = MessageParser.toJsonTree(value.toSpecification()) as JsonObject
+
+						conn.send(Next(mid, payload))
 						stream.request(1)
 					}
 

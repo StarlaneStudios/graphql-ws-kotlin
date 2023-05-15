@@ -9,6 +9,7 @@ import org.starlane.graphqlwskt.Payload
 import java.net.URI
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.reflect.KClass
 
 /**
  *
@@ -88,7 +89,8 @@ class GraphQLClient(
 	 * can also be used for Query and Mutation
 	 * operations.
 	 */
-	fun <T> subscribe(
+	fun <T : Any> subscribe(
+		type: KClass<T>,
 		query: String,
 		operationName: String? = null,
 		variables: Map<String, Any>? = null,
@@ -103,7 +105,22 @@ class GraphQLClient(
 			operationName = operationName,
 			variables = variables,
 			extensions = extensions
-		))
+		), type)
+	}
+
+	/**
+	 * Send a GraphQL query to the server and
+	 * subscribe to the response. This function
+	 * can also be used for Query and Mutation
+	 * operations.
+	 */
+	inline fun <reified T : Any> subscribe(
+		query: String,
+		operationName: String? = null,
+		variables: Map<String, Any>? = null,
+		extensions: Map<String, Any>? = null
+	): Flow<T> {
+		return subscribe(T::class, query, operationName, variables, extensions)
 	}
 
 	/**
@@ -111,13 +128,28 @@ class GraphQLClient(
 	 * receive a single response. For subscriptions
 	 * please use the [subscribe] function.
 	 */
-	suspend fun <T> query(
+	suspend fun <T : Any> query(
+		type: KClass<T>,
 		query: String,
 		operationName: String? = null,
 		variables: Map<String, Any>? = null,
 		extensions: Map<String, Any>? = null
 	): T {
-		return subscribe<T>(query, operationName, variables, extensions).single()
+		return subscribe(type, query, operationName, variables, extensions).single()
+	}
+
+	/**
+	 * Send a GraphQL query to the server and
+	 * receive a single response. For subscriptions
+	 * please use the [subscribe] function.
+	 */
+	suspend inline fun <reified T : Any> query(
+		query: String,
+		operationName: String? = null,
+		variables: Map<String, Any>? = null,
+		extensions: Map<String, Any>? = null
+	): T {
+		return query(T::class, query, operationName, variables, extensions)
 	}
 
 }

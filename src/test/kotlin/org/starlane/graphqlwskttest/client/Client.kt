@@ -1,7 +1,8 @@
-package org.starlane.graphqlwskt.client
+package org.starlane.graphqlwskttest.client
 
-import kotlinx.coroutines.flow.collect
+import com.google.gson.JsonObject
 import kotlinx.coroutines.runBlocking
+import org.starlane.graphqlwskt.client.GraphQLClient
 import java.net.URI
 
 /**
@@ -18,14 +19,16 @@ fun main() {
 	runBlocking {
 		client.connect()
 
-		client.query<String>("example").single().let {
-			println(it)
-		}
+		val result = client.query<JsonObject>("query { example }")
+
+		println(result)
 
 		println("Done. Moving to subscriptions")
 
-		client.subscribe<String>("examples").collect {
+		client.subscribe<JsonObject>("subscription { examples }").collect {
 			println(it)
 		}
+
+		client.close()
 	}
 }

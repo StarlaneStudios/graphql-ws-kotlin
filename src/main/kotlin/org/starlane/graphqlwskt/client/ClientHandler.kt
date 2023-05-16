@@ -2,18 +2,16 @@ package org.starlane.graphqlwskt.client
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.launch
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.starlane.graphqlwskt.*
 import org.starlane.graphqlwskt.Message.*
 import java.net.URI
+import java.time.Duration
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
@@ -23,17 +21,18 @@ import kotlin.reflect.KClass
  */
 internal class ClientHandler(
 	endpoint: URI,
-	val keepAlive: Long = 10,
-	val retryAttempts: Int = 5,
+	val retryAttempts: Int,
 	val context: CoroutineContext,
-	val initTimeout: Long = 5000,
-	val params: (() -> Payload)? = null,
+	val keepAlive: Duration,
+	val initTimeout: Duration,
+	val params: (() -> Payload)?,
 ) : WebSocketClient(endpoint, buildDraft()) {
 
 	internal var initPayload: Payload? = null
 	internal var acknowledged = false
 	internal val scope = CoroutineScope(context)
 	internal val subscriptions = HashMap<String, ActiveSubscription>()
+	internal val completable = CompletableDeferred<Unit>()
 
 	override fun onOpen(handshakedata: ServerHandshake?) {
 		val payload = params?.invoke() ?: emptyMap()
@@ -41,7 +40,7 @@ internal class ClientHandler(
 		send(ConnectionInit(payload))
 
 		scope.launch {
-			delay(initTimeout)
+			delay(initTimeout.toMillis())
 
 			if (!acknowledged && isOpen) {
 				close(CloseCode.ConnectionAcknowledgementTimeout)
@@ -57,6 +56,8 @@ internal class ClientHandler(
 			return
 		}
 
+//		println("<- ${MessageParser.toJson(msg)}")
+
 		when(msg) {
 			is ConnectionAck -> {
 				acknowledged = true
@@ -65,9 +66,11 @@ internal class ClientHandler(
 					initPayload = msg.payload
 				}
 
+				completable.complete(Unit)
+
 				scope.launch {
 					while (isOpen) {
-						delay(keepAlive)
+						delay(keepAlive.toMillis())
 						send(Ping())
 					}
 				}
@@ -113,8 +116,15 @@ internal class ClientHandler(
 					close(it)
 				}
 			)
+
 			awaitClose()
 		}
 	}
+
+//	override fun send(text: String) {
+//		println("-> $text")
+//
+//		super.send(text)
+//	}
 
 }

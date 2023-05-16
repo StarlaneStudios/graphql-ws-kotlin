@@ -1,10 +1,11 @@
-package org.starlane.graphqlwskt.server
+package org.starlane.graphqlwskttest.server
 
 import kotlinx.coroutines.runBlocking
-import org.starlane.graphqlwskt.server.fetchers.QueryExample
-import org.starlane.graphqlwskt.server.fetchers.SubscriptionExample
+import org.starlane.graphqlwskt.server.GraphQLServer
 import org.starlane.graphqlwskt.util.buildSchemaResource
 import org.starlane.graphqlwskt.util.compileSchema
+import org.starlane.graphqlwskttest.server.fetchers.QueryExample
+import org.starlane.graphqlwskttest.server.fetchers.SubscriptionExample
 
 fun main() {
 

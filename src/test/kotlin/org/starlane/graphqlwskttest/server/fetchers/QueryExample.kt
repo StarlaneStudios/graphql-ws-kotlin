@@ -1,10 +1,10 @@
-package org.starlane.graphqlwskt.server.fetchers
+package org.starlane.graphqlwskttest.server.fetchers
 
 import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.delay
-import org.starlane.graphqlwskt.util.AsyncDataFetcher
+import org.starlane.graphqlwskt.util.SuspendDataFetcher
 
-class QueryExample : AsyncDataFetcher<String> {
+class QueryExample : SuspendDataFetcher<String> {
 
 	val responses = listOf(
 		"Hello World",

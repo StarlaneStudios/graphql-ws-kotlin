@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.withContext
 import org.starlane.graphqlwskt.OperationRequest
 import org.starlane.graphqlwskt.Payload
-import java.lang.Exception
 import java.net.URI
+import java.time.Duration
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KClass
@@ -17,10 +17,10 @@ import kotlin.reflect.KClass
  */
 class GraphQLClient(
 	val endpoint: URI,
-	val keepAlive: Long = 10,
 	val retryAttempts: Int = 5,
-	val initTimeout: Long = 5000,
 	val context: CoroutineContext = EmptyCoroutineContext,
+	val keepAlive: Duration = Duration.ofSeconds(15),
+	val initTimeout: Duration = Duration.ofSeconds(5),
 	val params: (() -> Payload)? = null
 ) {
 
@@ -62,9 +62,9 @@ class GraphQLClient(
 
 		val client = ClientHandler(
 			endpoint,
-			keepAlive,
 			retryAttempts,
 			context,
+			keepAlive,
 			initTimeout,
 			params
 		).also {
@@ -78,6 +78,8 @@ class GraphQLClient(
 				throw GraphQLNetworkException()
 			}
 		}
+
+		client.completable.await()
 	}
 
 	/**

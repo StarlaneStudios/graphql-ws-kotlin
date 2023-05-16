@@ -1,7 +1,9 @@
-package org.starlane.graphqlwskt.server
+package org.starlane.graphqlwskttest.server
 
 import graphql.GraphQLContext
 import graphql.schema.GraphQLSchema
+import org.starlane.graphqlwskt.server.ConnectResult
+import org.starlane.graphqlwskt.server.GraphQLServerAdapter
 
 class TestServerAdapter(
 	val schema: GraphQLSchema

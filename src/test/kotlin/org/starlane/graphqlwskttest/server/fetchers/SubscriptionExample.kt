@@ -1,4 +1,4 @@
-package org.starlane.graphqlwskt.server.fetchers
+package org.starlane.graphqlwskttest.server.fetchers
 
 import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.delay

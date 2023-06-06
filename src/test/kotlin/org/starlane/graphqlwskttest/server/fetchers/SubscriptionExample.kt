@@ -17,7 +17,7 @@ class SubscriptionExample : FlowDataFetcher<String> {
 
 	override fun resolve(environment: DataFetchingEnvironment): Flow<String> {
 		return responses.asFlow().map {
-			delay(1000)
+			delay(100)
 			it
 		}
 	}

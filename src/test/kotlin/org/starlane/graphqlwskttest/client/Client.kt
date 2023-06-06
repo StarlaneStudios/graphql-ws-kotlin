@@ -17,12 +17,13 @@ fun main() {
 	)
 
 	runBlocking {
-		client.connect()
+		client.connect().run {
+			println("Connected")
+		}
 
-		val result = client.query<JsonObject>("query { example }")
+		val result = client.queryResource<JsonObject>("queries/example.gql")
 
 		println(result)
-
 		println("Done. Moving to subscriptions")
 
 		client.subscribe<JsonObject>("subscription { examples }").collect {

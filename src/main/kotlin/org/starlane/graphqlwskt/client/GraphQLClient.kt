@@ -159,4 +159,70 @@ class GraphQLClient(
 		return query(T::class, query, operationName, variables, extensions)
 	}
 
+	/**
+	 * Send a GraphQL query to the server and
+	 * subscribe to the response. This function
+	 * can also be used for Query and Mutation
+	 * operations.
+	 */
+	fun <T : Any> subscribeResource(
+		type: KClass<T>,
+		resource: String,
+		operationName: String? = null,
+		variables: Map<String, Any>? = null,
+		extensions: Map<String, Any>? = null
+	): Flow<T> {
+		val location = type::class.java.classLoader.getResource(resource)
+			?: throw IllegalArgumentException("Query resource not found: $resource")
+
+		return subscribe(type, location.readText(), operationName, variables, extensions)
+	}
+
+	/**
+	 * Send a GraphQL query to the server and
+	 * subscribe to the response. This function
+	 * can also be used for Query and Mutation
+	 * operations.
+	 */
+	inline fun <reified T : Any> subscribeResource(
+		resource: String,
+		operationName: String? = null,
+		variables: Map<String, Any>? = null,
+		extensions: Map<String, Any>? = null
+	): Flow<T> {
+		return subscribeResource(T::class, resource, operationName, variables, extensions)
+	}
+
+	/**
+	 * Send a GraphQL query to the server and
+	 * receive a single response. For subscriptions
+	 * please use the [subscribe] function.
+	 */
+	suspend fun <T : Any> queryResource(
+		type: KClass<T>,
+		resource: String,
+		operationName: String? = null,
+		variables: Map<String, Any>? = null,
+		extensions: Map<String, Any>? = null
+	): T {
+		val location = type::class.java.classLoader.getResource(resource)
+			?: throw IllegalArgumentException("Query resource not found: $resource")
+
+		return query(type, location.readText(), operationName, variables, extensions)
+	}
+
+	/**
+	 * Send a GraphQL query to the server and
+	 * receive a single response. For subscriptions
+	 * please use the [subscribe] function.
+	 */
+	suspend inline fun <reified T : Any> queryResource(
+		resource: String,
+		operationName: String? = null,
+		variables: Map<String, Any>? = null,
+		extensions: Map<String, Any>? = null
+	): T {
+		return queryResource(T::class, resource, operationName, variables, extensions)
+	}
+
 }

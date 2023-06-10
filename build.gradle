@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 group = 'org.starlane'
-version = '1.0.3'
+version = '1.0.4'
 
 apply plugin: 'java'
 apply plugin: 'kotlin'

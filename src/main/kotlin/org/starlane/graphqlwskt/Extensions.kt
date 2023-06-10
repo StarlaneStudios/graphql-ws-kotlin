@@ -5,11 +5,19 @@ import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import graphql.GraphQLContext
 import org.java_websocket.WebSocket
+import java.util.stream.Collectors
 
 /**
  * Retrieves the WebSocket connection from the context
  */
 fun GraphQLContext.getSocket(): WebSocket = get("__socket")
+
+/**
+ * Convert the context to a map instance
+ */
+fun GraphQLContext.asMap(): Map<Any, Any?> {
+	return stream().collect(Collectors.toMap({ it.key }, { it.value }))
+}
 
 // ---------- Internal extensions ----------
 

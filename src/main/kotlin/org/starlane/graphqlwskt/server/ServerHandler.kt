@@ -121,10 +121,12 @@ internal class ServerHandler(
 
 				val mid = msg.id
 				val (operationName, query, variables, extensions) = msg.payload
+				val context = state.context.asMap()
 
 				val input = ExecutionInput.newExecutionInput()
 					.query(query)
 					.operationName(operationName)
+					.graphQLContext(context)
 
 				if (variables != null) {
 					input.variables(variables)

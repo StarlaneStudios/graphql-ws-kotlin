@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-group = 'org.starlane'
+group = 'com.github.StarlaneStudios'
 version = '1.0.4'
 
 apply plugin: 'java'
@@ -17,7 +17,6 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath 'com.github.johnrengelman:shadow:8.1.1'
     }
 }
 
@@ -30,8 +29,6 @@ dependencies {
     api "org.java-websocket:Java-WebSocket:1.5.3"
     api "com.graphql-java:graphql-java:20.2"
 
-    apply plugin: 'com.github.johnrengelman.shadow'
-
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
@@ -43,10 +40,12 @@ dependencies {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-shadowJar {
-    archiveClassifier.set("")
-
-    destinationDirectory = rootProject.file("dist")
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
 }
 
 compileKotlin {

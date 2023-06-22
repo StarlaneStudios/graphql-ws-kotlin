@@ -5,4 +5,4 @@ import graphql.GraphQLException
 
 class GraphQLQueryException(
 	val errors: Array<Map<String, Any>>
-) : GraphQLException("GraphQL server returned errors: " + Gson().toJson(errors))
+) : GraphQLException("GraphQL server returned errors: " + Gson().toJson(Gson().toJsonTree(errors)))

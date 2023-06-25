@@ -102,8 +102,6 @@ internal class ClientHandler(
 	fun <T : Any> subscribe(request: OperationRequest, type: KClass<T>): Flow<T> {
 		val id = UUID.randomUUID().toString()
 
-		send(Subscribe(id, request))
-
 		return channelFlow {
 			subscriptions[id] = ActiveSubscription(
 				onNext = {
@@ -117,6 +115,7 @@ internal class ClientHandler(
 				}
 			)
 
+			send(Subscribe(id, request))
 			awaitClose()
 		}
 	}

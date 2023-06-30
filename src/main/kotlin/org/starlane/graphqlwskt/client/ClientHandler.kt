@@ -56,8 +56,6 @@ internal class ClientHandler(
 			return
 		}
 
-//		println("<- ${MessageParser.toJson(msg)}")
-
 		when(msg) {
 			is ConnectionAck -> {
 				acknowledged = true
@@ -93,10 +91,12 @@ internal class ClientHandler(
 
 	override fun onClose(code: Int, reason: String?, remote: Boolean) {
 		scope.cancel()
+		subscriptions.clear()
 	}
 
 	override fun onError(ex: Exception?) {
 		scope.cancel()
+		subscriptions.clear()
 	}
 
 	fun <T : Any> subscribe(request: OperationRequest, type: KClass<T>): Flow<T> {
@@ -109,9 +109,11 @@ internal class ClientHandler(
 				},
 				onComplete = {
 					close()
+					subscriptions.remove(id)
 				},
 				onError = {
 					close(it)
+					subscriptions.remove(id)
 				}
 			)
 
@@ -119,11 +121,4 @@ internal class ClientHandler(
 			awaitClose()
 		}
 	}
-
-//	override fun send(text: String) {
-//		println("-> $text")
-//
-//		super.send(text)
-//	}
-
 }

@@ -1,13 +1,15 @@
 package org.starlane.graphqlwskt
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
+import com.google.gson.*
 import java.lang.reflect.Type
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 internal val MessageParser = GsonBuilder()
 	.registerTypeAdapter(Message::class.java, MessageAdapter())
+	.registerTypeAdapter(LocalDate::class.java, LocalDateSerializer())
+	.registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeSerializer())
 	.create()
 
 class MessageAdapter : JsonDeserializer<Message> {
@@ -29,6 +31,30 @@ class MessageAdapter : JsonDeserializer<Message> {
 		}
 
 		return context.deserialize(json, target)
+	}
+
+}
+
+class LocalDateSerializer : JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+
+	override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): LocalDate {
+		return LocalDate.parse(json.asString, DateTimeFormatter.ISO_DATE)
+	}
+
+	override fun serialize(src: LocalDate, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+		return JsonPrimitive(src.format(DateTimeFormatter.ISO_DATE))
+	}
+
+}
+
+class LocalDateTimeSerializer : JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
+
+	override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): LocalDateTime {
+		return LocalDateTime.parse(json.asString, DateTimeFormatter.ISO_DATE_TIME)
+	}
+
+	override fun serialize(src: LocalDateTime, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+		return JsonPrimitive(src.format(DateTimeFormatter.ISO_DATE_TIME))
 	}
 
 }
